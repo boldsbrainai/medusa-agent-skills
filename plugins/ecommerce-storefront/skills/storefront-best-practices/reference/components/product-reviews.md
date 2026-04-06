@@ -32,11 +32,13 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ### Placement
 
 **On product page:**
+
 - Below product details (after add-to-cart)
 - Before related products
 - Anchor link in product info: "★★★★★ (127 reviews)"
 
 **Separate reviews page:**
+
 - Only for very large catalogs (500+ reviews)
 - Link: "View All Reviews"
 - Most stores show reviews inline on product page
@@ -46,6 +48,7 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ### Average Rating Display
 
 **Show prominently:**
+
 - Average rating: "★★★★★ 4.5 out of 5"
 - Total review count: "Based on 127 reviews"
 - Large stars (24-32px)
@@ -53,6 +56,7 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ### Rating Distribution (CRITICAL)
 
 **Visual breakdown with clickable bars:**
+
 ```
 5 ★ [████████████████████] 82 (65%)
 4 ★ [██████░░░░░░░░░░░░░░] 25 (20%)
@@ -62,11 +66,13 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ```
 
 **Make bars clickable:**
+
 - Click to filter reviews by rating
 - Shows only selected star ratings
 - "Show all" to reset filter
 
 **Why distribution matters:**
+
 - Perfect 5.0 rating seems fake (customers trust 4.2-4.5 average)
 - Showing negative reviews builds trust
 - Distribution helps customers understand product quality
@@ -74,6 +80,7 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ### No Reviews State
 
 **When no reviews:**
+
 - "No reviews yet"
 - "Be the first to review this product"
 - "Write a Review" button prominent
@@ -84,12 +91,14 @@ Product reviews build trust and influence purchase decisions. Reviews with ratin
 ### Sort Options (CRITICAL)
 
 **Essential sorting:**
+
 - **Most Recent** (default) - shows latest feedback
 - **Most Helpful** (by upvotes) - surfaces best reviews
 - **Highest Rating** (5 stars first) - see positive feedback
 - **Lowest Rating** (1 star first) - see concerns
 
 **Dropdown selector:**
+
 ```
 Sort by: [Most Recent ▾]
 ```
@@ -158,12 +167,14 @@ Sort by: [Most Recent ▾]
 ### Helpful Votes
 
 **Upvote/downvote system:**
+
 - "Was this review helpful?"
 - [👍 Yes (24)] [👎 No (2)]
 - Click to vote (one vote per user)
 - Powers "Most Helpful" sorting
 
 **Benefits:**
+
 - Surfaces most useful reviews
 - Community validation
 - Reduces impact of unhelpful reviews

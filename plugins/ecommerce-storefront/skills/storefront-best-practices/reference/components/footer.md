@@ -2,12 +2,18 @@
 
 ## Contents
 
-- [Overview](#overview)
-- [Essential Footer Elements](#essential-footer-elements)
-- [Dynamic Category Links (Ecommerce-Specific)](#dynamic-category-links-ecommerce-specific)
-- [Newsletter Signup](#newsletter-signup)
-- [Payment and Trust Badges](#payment-and-trust-badges)
-- [Mobile Footer](#mobile-footer)
+- [Footer Component](#footer-component)
+  - [Contents](#contents)
+  - [Overview](#overview)
+    - [Key Requirements](#key-requirements)
+  - [Essential Footer Elements](#essential-footer-elements)
+    - [Must-Have Content](#must-have-content)
+    - [Multi-Column Layout (Desktop)](#multi-column-layout-desktop)
+  - [Dynamic Category Links (Ecommerce-Specific)](#dynamic-category-links-ecommerce-specific)
+  - [Newsletter Signup](#newsletter-signup)
+  - [Payment and Trust Badges](#payment-and-trust-badges)
+  - [Mobile Footer](#mobile-footer)
+  - [Checklist](#checklist)
 
 ## Overview
 
@@ -30,12 +36,14 @@ Footer provides supplementary navigation, company info, and trust signals. Appea
 ### Must-Have Content
 
 **Required:**
+
 - Navigation links (categories from backend)
 - Contact information (email, phone)
 - Legal links (Privacy Policy, Terms of Service)
 - Copyright notice with current year
 
 **Strongly recommended:**
+
 - Newsletter signup form
 - Payment method badges
 - Social media links
@@ -44,6 +52,7 @@ Footer provides supplementary navigation, company info, and trust signals. Appea
 ### Multi-Column Layout (Desktop)
 
 **Standard pattern: 4-5 columns**
+
 - Column 1: Shop/Categories (dynamic from backend)
 - Column 2: Customer Service (Contact, FAQ, Shipping)
 - Column 3: Company (About, Careers)
