@@ -1,6 +1,7 @@
 # Forms and Modal Patterns
 
 ## Contents
+
 - [FocusModal vs Drawer](#focusmodal-vs-drawer)
 - [Edit Button Patterns](#edit-button-patterns)
   - [Simple Edit Button (top right corner)](#simple-edit-button-top-right-corner)
@@ -14,11 +15,13 @@
 ## FocusModal vs Drawer
 
 **FocusModal** - Use for creating new entities:
+
 - Full-screen modal
 - More space for complex forms
 - Better for multi-step flows
 
 **Drawer** - Use for editing existing entities:
+
 - Side panel that slides in from right
 - Quick edits without losing context
 - Better for single-field updates

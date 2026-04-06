@@ -1,6 +1,7 @@
 # Data Loading Principles and Patterns
 
 ## Contents
+
 - [Fundamental Rules](#fundamental-rules)
 - [Think Before You Code Checklist](#think-before-you-code-checklist)
 - [Common Mistake vs Correct Pattern](#common-mistake-vs-correct-pattern)
@@ -133,11 +134,13 @@ const response = await fetch(`http://localhost:9000/admin/products/${productId}`
 ### SDK Method Selection
 
 **For built-in Medusa endpoints:**
+
 - Use existing SDK methods: `sdk.admin.product.list()`, `sdk.store.product.list()`, etc.
 - Provides type safety, autocomplete, and proper header handling
 - Reference: [Medusa JS SDK Documentation](https://docs.medusajs.com/resources/medusa-js-sdk)
 
 **For custom API routes:**
+
 - Use `sdk.client.fetch()` for your custom endpoints
 - SDK still handles all required headers (auth, API keys)
 - Pass plain objects to body (SDK handles JSON serialization)
@@ -383,6 +386,7 @@ const updateMetadata = useMutation({
 ### Authentication/Authorization errors when fetching data
 
 **Symptoms:**
+
 - API returns 401 Unauthorized or 403 Forbidden
 - "Missing x-publishable-api-key header" error
 - "Unauthorized" error on admin routes

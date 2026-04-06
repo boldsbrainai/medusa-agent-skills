@@ -43,6 +43,7 @@ Let me verify your implementation. Please share the following:
 Show me your `src/admin/lib/sdk.ts` file.
 
 **Key things to check**:
+
 - [ ] Imports `Medusa` from "@medusajs/js-sdk"
 - [ ] Creates SDK instance with `new Medusa()`
 - [ ] Configures `baseUrl` using `import.meta.env.VITE_BACKEND_URL` or "/"
@@ -277,12 +278,14 @@ Admin Product Detail Page
 ```
 
 **Why widgets matter**:
+
 - **Non-invasive**: Extend pages without modifying core code
 - **Composable**: Multiple widgets can use the same zone
 - **Upgrade safe**: Core page updates don't break your widgets
 - **Contextual**: Receive page data as props
 
 **React Query caching**:
+
 - First visit: Fetches product with brand
 - Navigate away and back: Uses cached data (instant)
 - Background refetch: Keeps data fresh

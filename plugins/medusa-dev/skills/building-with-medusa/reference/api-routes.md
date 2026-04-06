@@ -3,6 +3,7 @@
 API routes (also called "endpoints") are the primary way to expose custom functionality to storefronts and admin dashboards.
 
 ## Contents
+
 - [Path Conventions](#path-conventions)
 - [Middleware Validation](#middleware-validation)
 - [Query Parameter Validation](#query-parameter-validation)
@@ -15,11 +16,13 @@ API routes (also called "endpoints") are the primary way to expose custom functi
 ## Path Conventions
 
 ### Store API Routes (Storefront)
+
 - **Path prefix**: `/store/<rest-of-path>`
 - **Examples**: `/store/newsletter-signup`, `/store/custom-search`
 - **Authentication**: SDK automatically includes publishable API key
 
 ### Admin API Routes (Dashboard)
+
 - **Path prefix**: `/admin/<rest-of-path>`
 - **Examples**: `/admin/custom-reports`, `/admin/bulk-operations`
 - **Authentication**: SDK automatically includes auth headers (bearer/session)
@@ -144,6 +147,7 @@ export default defineMiddlewares({
 ```
 
 **Why this matters:**
+
 - Middleware files export arrays directly, not config objects
 - Route files (like `route.ts`) use `export const config = defineRouteConfig(...)`
 - Don't confuse the two patterns - middlewares are simpler (just an array)
@@ -254,6 +258,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 **⚠️ BEST PRACTICE**: For API routes that retrieve lists of resources, use request query config to allow clients to control fields, pagination, and ordering.
 
 This pattern:
+
 - Allows clients to specify which fields/relations to retrieve
 - Enables client-controlled pagination
 - Supports custom ordering
@@ -301,6 +306,7 @@ export default defineMiddlewares({
 ```
 
 **Configuration Options:**
+
 - `defaults`: Array of default fields and relations to retrieve
 - `isList`: Boolean indicating if this returns a list (affects pagination)
 - `allowed`: (Optional) Array of fields/relations allowed in the `fields` query param
@@ -470,6 +476,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 ```
 
 **Why this matters:**
+
 - Dynamic imports add unnecessary overhead to every request
 - Makes code harder to read and maintain
 - Breaks static analysis and TypeScript checking
@@ -478,6 +485,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 ## API Route Structure
 
 **⚠️ IMPORTANT**: Medusa uses only GET, POST and DELETE as a convention.
+
 - **GET** for reads
 - **POST** for mutations (create/update)
 - **DELETE** for deletions
@@ -570,6 +578,7 @@ Medusa automatically formats errors:
 ### Default Protected Routes
 
 All routes under these prefixes are automatically protected:
+
 - `/admin/*` - Requires authenticated admin user
 - `/store/customers/me/*` - Requires authenticated customer
 
@@ -682,6 +691,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 ## Common Built-in Workflows
 
 Ask MedusaDocs for specific workflow names and their input parameters:
+
 - Customer workflows: create, update, delete customers
 - Product workflows: create, update, delete products
 - Order workflows: create, cancel, fulfill orders
@@ -692,7 +702,7 @@ Ask MedusaDocs for specific workflow names and their input parameters:
 
 Organize routes by feature or domain:
 
-```
+```bash
 src/api/
 ├── admin/
 │   ├── custom-reports/
