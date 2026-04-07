@@ -1,486 +1,343 @@
-# Checkout Page Layout
+# Checkout Flow – Reference
 
-## Contents
+Guidance for implementing the checkout flow in the YSH Store storefront. This reference documents the architecture, surface steps, B2B approval logic, and patterns established in the codebase.
 
-- [Overview](#overview)
-- [Decision: Single-Page vs Multi-Step](#decision-single-page-vs-multi-step)
-- [Guest vs Logged-In Checkout](#guest-vs-logged-in-checkout)
-- [Component Architecture](#component-architecture-recommended)
-- [Checkout Flow](#checkout-flow)
-- [Key Ecommerce Considerations](#key-ecommerce-considerations)
-- [Backend Integration](#backend-integration)
-- [Mobile Checkout](#mobile-checkout)
-- [Trust and Conversion Optimization](#trust-and-conversion-optimization)
-- [Error Handling](#error-handling)
-- [Checklist](#checklist)
+## Decision Framework: Checkout Strategy
 
-## Overview
+### Multi-Step Checkout (Current Implementation)
 
-Final step in conversion funnel where customers provide shipping and payment information. Must be optimized for completion with minimal friction.
+**Use when:**
+- Complex B2B flows with approval requirements
+- Multiple data collection points (company, address, shipping, billing, contact, payment)
+- Progressive disclosure reduces cognitive load
 
-**⚠️ CRITICAL: Always fetch shipping methods AND payment methods from backend. Users must be able to select from available options - never skip payment method selection.**
+**YSH Store uses 4 surface steps** (mapped from internal step IDs):
 
-### Key Requirements
+| Surface Step | Internal Steps Covered | Description |
+|---|---|---|
+| `address` | `shipping-address`, `billing-address`, `contact-information` | All address and contact data |
+| `delivery` | `delivery` | Shipping method selection |
+| `payment` | `payment` | Payment method selection |
+| `review` | `review` | Final order confirmation |
 
-- Clear steps and progress indication
-- Guest checkout option (if backend supports it)
-- Shipping address and method selection
-- **Shipping methods fetched from backend (vary by address/region)**
-- **Payment methods fetched from backend (user must select preferred method)**
-- Payment processing
-- Order review before submission
-- Trust signals throughout
-- Mobile-optimized (60%+ traffic is mobile)
-- Fast loading and submission
+> ⚠️ The UI stepper may display more labels than surface steps (e.g., Entrega, Faturamento, Frete, Contato, Pagamento). The surface step system is the authoritative state machine; the stepper is presentational only.
 
-## Decision: Single-Page vs Multi-Step
+---
 
-**Use Single-Page Checkout when:**
-- Simple products with few shipping options
-- Mobile-heavy traffic (>60% mobile users)
-- Fewer form fields required (<15 total)
-- Startup or new store (minimize friction)
-- Fast checkout is prioritized
-- Low average order value (<$50)
+## Architecture
 
-**Benefits:**
-- Fewer clicks (no step navigation)
-- User sees full scope upfront
-- Faster on mobile (no page loads)
-- Lower perceived friction
-
-**Use Multi-Step Checkout when:**
-- Complex shipping (international, multiple carriers)
-- B2B customers (need detailed information)
-- Many form fields required (>15 total)
-- High-value products (>$100, thoroughness expected)
-- Established brand (customers trust process)
-- Need clear progress indication
-
-**Benefits:**
-- Less overwhelming (one step at a time)
-- Progress indicator reduces anxiety
-- Easier step-by-step validation
-- Better for complex forms
-
-**Recommended: Hybrid Approach**
-- Single-page scroll layout on desktop
-- Accordion-based sections on mobile (expand/collapse)
-- Progressive disclosure of sections
-- Best of both worlds
-
-**Common steps:**
-1. Shipping Information (address)
-2. Delivery (shipping method selection)
-3. Payment (payment method and details)
-4. Review (final review before submission)
-
-## Guest vs Logged-In Checkout
-
-**IMPORTANT:** Guest checkout availability depends on backend support.
-
-**Guest checkout (recommended if backend supports it):**
-- Reduces friction (no signup barrier)
-- "Checkout as Guest" option prominent
-- Email required for order confirmation
-- Optional "Create account?" checkbox after order
-- Don't force account creation
-
-**Logged-in checkout:**
-- Pre-fill saved addresses and payment methods
-- "Returning customer? Log in" link at top
-- Allow seamless switch between guest/login
-
-## Component Architecture (RECOMMENDED)
-
-**Build separate components for each checkout step for better maintainability and reusability.**
-
-✅ **Create individual step components:**
-- `ShippingInformationStep` - Contact and shipping address form
-- `DeliveryMethodStep` - Shipping method selection
-- `PaymentInformationStep` - Payment method and details
-- `OrderReviewStep` - Final review before submission
-
-**Benefits of component separation:**
-- **Maintainability**: Fix bugs or update one step without affecting others
-- **Reusability**: Reuse shipping address component in account settings, checkout, etc.
-- **Testability**: Test each step independently
-- **Code organization**: Clearer separation of concerns (validation, submission logic per step)
-- **Easier debugging**: Isolate issues to specific steps
-- **Flexibility**: Easy to reorder steps or add/remove steps based on requirements
-- **Performance**: Lazy load steps or split bundles for faster initial load
-
-**What to separate:**
-- Main checkout page/container component
-- Individual step components (ShippingInformationStep, DeliveryMethodStep, etc.)
-- Reusable order summary component (shown on all steps)
-
-**Component communication:**
-Each step component should accept:
-- Current step data (form values)
-- Callback to update data (e.g., `onShippingUpdate`)
-- Callback to proceed to next step (e.g., `onContinue`)
-- Loading/error states
-- Validation errors
-
-**Shared components:**
-- Address form (used in shipping and billing)
-- Payment method selector
-- Order summary (sidebar, shown on all steps)
-
-**Works for both single-page and multi-step:**
-- Single-page: Render all steps at once, scroll-based navigation
-- Multi-step: Show one component at a time, controlled by step state
-- Accordion: Expand/collapse components as sections
-
-**Common mistake:**
-- ❌ Building entire checkout as one massive component with all form fields, logic, and validation mixed together
-- ✅ Separate components for each step, shared state management in parent
-
-## Checkout Flow
-
-### Complete Checkout Flow Diagram
+### Server/Client Split
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CHECKOUT PROCESS                            │
-└─────────────────────────────────────────────────────────────────────┘
-
-    ┌──────────────────────────────────────────────────────┐
-    │  Optional: Guest Checkout vs Login                   │
-    │  • Guest: Enter email only                           │
-    │  • Logged-in: Pre-fill saved data                    │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-    ┌──────────────────────────────────────────────────────┐
-    │  STEP 1: Shipping Information                        │
-    │  ├─ Contact: Email, Phone                            │
-    │  ├─ Shipping Address: Name, Address, City, etc.      │
-    │  └─ Billing Address: □ Same as shipping / Different  │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-    ┌──────────────────────────────────────────────────────┐
-    │  STEP 2: Delivery                                    │
-    │  • Fetch shipping methods from backend               │
-    │  • Display: Standard, Express, Overnight             │
-    │  • Show: Cost + Delivery estimate                    │
-    │  • Update order total                                │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-    ┌──────────────────────────────────────────────────────┐
-    │  STEP 3: Payment Information                         │
-    │  • Fetch payment methods from backend                │
-    │  • Options: Card, PayPal, Apple Pay, etc.            │
-    │  • Enter: Card details (tokenized)                   │
-    │  • Use billing address from Step 1                   │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-    ┌──────────────────────────────────────────────────────┐
-    │  STEP 4: Order Review                                │
-    │  • Review: Items, addresses, shipping, payment       │
-    │  • Optional: □ Agree to Terms and Conditions         │
-    │  • Click: [Place Order] Button                       │
-    │  → Payment processing triggered                      │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-    ┌──────────────────────────────────────────────────────┐
-    │  Loading: Processing payment...                      │
-    │  • Authorize/capture payment via gateway             │
-    │  • Create order in backend                           │
-    │  • Send confirmation email                           │
-    └────────────────────┬─────────────────────────────────┘
-                         │
-                    ┌────┴────┐
-                    │         │
-              Success       Failure
-                    │         │
-                    ▼         ▼
-    ┌───────────────────┐   ┌──────────────────────┐
-    │ Order Confirmation│   │ Show Error Message   │
-    │ • Order number    │   │ • Retry payment      │
-    │ • Details         │   │ • Keep form data     │
-    │ • Tracking link   │   │ • Suggest solutions  │
-    └───────────────────┘   └──────────────────────┘
+CheckoutWorkspace (server)          → fetches shipping/payment methods from Medusa
+  └── CheckoutWorkspaceClient (client) → manages all UI state, step transitions, form data
+        ├── Address step UI
+        ├── Delivery step UI
+        ├── Payment step UI
+        └── Review step UI
 ```
 
-## Key Ecommerce Considerations
+**Why this split matters:**
+- `CheckoutWorkspace` fetches `listCartShippingMethods` and `listCartPaymentMethods` server-side, avoiding client waterfalls
+- `CheckoutWorkspaceClient` is a "use client" component that holds all interactive state
+- Overrides (`availableShippingMethodsOverride`, `availablePaymentMethodsOverride`) allow E2E testing without a live backend
 
-### Shipping Address Collection
+### Surface Steps Logic (`lib/surface-steps.ts`)
 
-Collect:
-- Required: email, name, address, city, state/zip, country
-- Optional: phone.
-
-**Key ecommerce considerations:**
-- Email placement: First if guest checkout (identifies customer)
-- Country placement: Early if shipping methods vary by country (affects available shipping)
-- Phone: Optional to reduce friction, but recommended for delivery coordination
-- Billing address: "Same as shipping" checkbox (default checked)
-
-**For Medusa backends:**
-- Country dropdown: Show only countries from cart's region (don't show all countries globally)
-- Get countries from: `cart.region.countries` or `sdk.store.region.retrieve(cart.region_id)`
-- Medusa regions contain specific countries - limiting options ensures correct pricing and shipping
-- If user needs different country, they must change region first (typically via country selector component)
-
-### Shipping Method Selection
-
-**Fetch from backend after address provided** (shipping methods vary by address/region):
-- Display as radio buttons with cost + delivery estimate
-- Update order total immediately when method changes
-- Highlight free shipping if available
-- Show "Add $X for free shipping" if close to threshold
-- Handle unavailable shipping: show message, suggest alternatives
-
-### Payment Method Selection
-
-**CRITICAL: Always fetch payment methods from backend and allow user to select from available options.**
-
-Payment methods vary by store configuration (backend settings). NEVER assume which payment methods are available or hardcode payment options. Users MUST be able to choose their preferred payment method.
-
-**Fetch available methods from backend:**
 ```typescript
-// ALWAYS fetch payment providers from backend
-// For Medusa:
-const { payment_providers } = await sdk.store.payment.listPaymentProviders()
+// Step order is authoritative – do not reorder
+const CHECKOUT_SURFACE_STEP_ORDER: CheckoutSurfaceStep[] = [
+  "address",
+  "delivery",
+  "payment",
+  "review",
+]
 
-// For other backends:
-// Change based on the integrated backend
-const paymentMethods = await fetch(`${apiUrl}/payment-methods`)
-// Returns: card, paypal, apple_pay, google_pay, stripe, etc.
-```
-
-**Display payment method selection UI:**
-- Show all enabled payment providers returned by backend
-- Allow user to select their preferred method (radio buttons or cards)
-- Don't skip selection step - user must actively choose
-- Map backend codes to display names in the storefront. For example `pp_system_manual` -> `Manual payment`.
-- Common options: Credit/Debit Card, PayPal, Apple Pay, Google Pay, Buy Now Pay Later
-
-**Available payment methods (examples, actual options come from backend):**
-- Credit/Debit Card (most common, via Stripe/Braintree/other gateway)
-- PayPal (redirect or in-context)
-- Apple Pay (Safari, iOS only)
-- Google Pay (Chrome, Android)
-- Buy Now Pay Later (Affirm, Klarna - if enabled by store)
-- Manual payment (bank transfer, cash on delivery - if enabled)
-
-**Why backend fetching is required:**
-- Store admin controls which payment providers are enabled
-- Payment methods vary by region, currency, order value
-- Test vs production mode affects available methods
-- Can't assume all stores use the same payment gateway
-
-**For Medusa backends - Payment flow:**
-
-1. **List available payment providers:**
-```typescript
-const { payment_providers } = await sdk.store.payment.listPaymentProviders({
-  region_id: cart.region_id // Required to get region-specific providers
-})
-```
-
-2. **Display providers and allow user to select:**
-Show payment providers as radio buttons or cards. User must actively select one.
-
-3. **Initialize payment session after selection:**
-```typescript
-// When user selects a provider
-await sdk.store.payment.initiatePaymentSession(cart, {
-  provider_id: selectedProvider.id // e.g., "pp_stripe_stripe", "pp_system_default"
-})
-
-// Re-fetch cart to get updated payment session data
-const { cart: updatedCart } = await sdk.store.cart.retrieve(cart.id)
-```
-
-4. **Render provider-specific UI:**
-- Stripe providers (`pp_stripe_*`): Render Stripe Elements card UI
-- Manual payment (`pp_system_default`): No additional UI needed
-- Other providers: Implement according to provider requirements
-
-**Important:** Payment provider IDs are returned from the backend (e.g., `pp_stripe_stripe`, `pp_system_manual`). Map these to user-friendly display names in your UI.
-
-**Digital wallets (mobile priority):**
-- Apple Pay / Google Pay should be prominent on mobile
-- One-click payment (pre-filled shipping)
-- Significantly faster checkout
-- Higher conversion on mobile
-
-**Card payment:**
-- Use payment gateway (Stripe Elements, Braintree)
-- Never handle raw card data (PCI compliance)
-- Tokenize card data before submission
-- Auto-detect card type (show logo)
-
-### Order Review
-
-**Display for final confirmation:**
-Cart items, addresses, shipping method/cost, payment method, order total breakdown.
-
-**Key elements:**
-- "Edit" link next to each section (returns to step or edits inline)
-- Terms checkbox (if required): "I agree to Terms and Conditions"
-- Place Order button: Large (48-56px), shows total, loading state on submit
-
-### Order Summary Sidebar
-
-**Desktop:** Sticky sidebar with items, prices, totals. Updates in real-time.
-**Mobile:** Collapsible at top ("Show order summary" toggle). Keeps focus on form.
-
-## Backend Integration
-
-**Address validation (optional):**
-- Use address lookup APIs (Google, SmartyStreets) for higher accuracy
-- Tradeoff: accuracy vs friction. Consider for high-value orders.
-
-**Payment processing flow:**
-1. Frontend tokenizes payment (Stripe Elements, Braintree)
-2. Send token + order details to backend
-3. Backend authorizes/captures payment & creates order
-4. Redirect to confirmation page
-
-**Never:** Send raw card data, store cards without PCI compliance, process payments client-side.
-
-**On payment failure:** Show specific error, keep form data, allow retry without re-entering.
-
-### Order Completion and Cart Cleanup (CRITICAL)
-
-**After order is successfully placed, you MUST reset the cart state:**
-
-**Common issue:** Cart popup and cart state still show old cart content after order is placed. This happens because the global cart state (Context, Zustand, Redux) isn't cleared after checkout completion.
-
-**Required actions on successful order:**
-
-1. **Clear cart from global state:**
-   - Reset cart state in Context/Zustand/Redux to null or empty
-   - Update cart count to 0 in navbar
-   - Prevent old cart items from showing in cart popup
-
-2. **Clear localStorage cart ID:**
-   - Remove cart ID from localStorage: `localStorage.removeItem('cart_id')`
-   - Or create new cart and update cart ID in localStorage
-   - Ensures fresh cart for next shopping session
-
-3. **Invalidate cart queries (if using TanStack Query):**
-   - `queryClient.invalidateQueries({ queryKey: ['cart'] })`
-   - Or `queryClient.removeQueries({ queryKey: ['cart', cartId] })`
-   - Prevents stale cart data from cache
-
-4. **Redirect to order confirmation page:**
-   - Navigate to `/order-confirmation/[order_id]` or `/thank-you/[order_id]`
-   - Show order details, tracking info, confirmation
-
-**Pattern:**
-```typescript
-// After successful order placement
-async function onOrderSuccess(order) {
-  // 1. Clear cart state
-  setCart(null) // or clearCart() from context
-
-  // 2. Clear localStorage
-  localStorage.removeItem('cart_id')
-
-  // 3. Invalidate queries (if using TanStack Query)
-  queryClient.invalidateQueries({ queryKey: ['cart'] })
-
-  // 4. Redirect to confirmation
-  router.push(`/order-confirmation/${order.id}`)
+// Resolves which step to show based on cart state + URL ?step= param
+export const resolveCheckoutSurfaceState = (cart, rawStep) => {
+  const furthestAccessibleStep = getCheckoutSurfaceStepFromCart(cart)
+  const requestedStep = normalizeCheckoutSurfaceStep(rawStep)
+  // ...
 }
 ```
 
-**Why this is critical:**
-- Without clearing cart state, cart popup shows old items after order
-- User sees "phantom cart" if they click cart icon after checkout
-- Creates confusion and poor UX
-- May prevent user from starting new shopping session
+**Key invariant:** A customer can never jump ahead of `furthestAccessibleStep`. Steps become accessible as the cart progresses.
 
-## Mobile Checkout
+---
 
-**Key optimizations:**
-- Digital wallets prominent (Apple Pay/Google Pay) - significantly faster checkout
-- Single-column layout, 44-48px touch targets
-- Appropriate keyboard types, autocomplete attributes enabled
-- Collapsible order summary at top (shows total, expands on tap)
-- Sticky Place Order button at bottom (always accessible, shows total)
-- Accordion sections (one step at a time, reduces cognitive load)
+## B2B Approval Flow
 
-**For detailed mobile patterns and safe area insets**, see `reference/mobile-responsiveness.md`.
+The YSH Store checkout has B2B-specific logic:
 
-## Trust and Conversion Optimization
+```typescript
+// In CheckoutWorkspace (server)
+const requiresApproval =
+  cart.company?.approval_settings?.requires_admin_approval ||
+  cart.company?.approval_settings?.requires_sales_manager_approval
 
-**Trust signals (critical for conversion):**
-- "Secure Checkout" badge, payment provider logos (Visa, Mastercard)
-- Return policy link visible, customer support contact
-- Near Place Order: "100% secure checkout", guarantees/free returns if offered
-- For new brands: Customer review count, social proof
+const isApprovedAdmin =
+  customer?.employee?.is_admin &&
+  cart.approval_status?.status === ApprovalStatusType.APPROVED
+```
 
-**Reduce abandonment:**
-- Progress indicator (shows steps remaining)
-- Auto-save form data, clear pricing (no surprise fees)
-- Minimal required fields, smart defaults, autocomplete enabled
+### Payment Step Locking
 
-**Reduce perceived friction:**
-- "No account required" (guest checkout)
-- "Free shipping" highlighted
-- Time estimate: "Less than 2 minutes"
+- When `requiresApproval && !isApprovedAdmin` → `paymentLocked = true`
+- When payment is locked, the payment step is not rendered
+- An `ApprovalStatusBanner` shows the pending approval state
+- Admin users with approved status bypass the lock
+
+### Review Step Spending Limit
+
+```typescript
+// In Review component
+const spendLimitExceeded = customer ? checkSpendingLimit(cart, customer) : false
+
+// If exceeded → show warning + disabled "Revisar aprovacao" button
+// If within limit → show PaymentButton (place order)
+```
+
+---
+
+## Checkout Page
+
+### Route
+
+```
+app/[countryCode]/(checkout)/checkout/page.tsx
+```
+
+### E2E Local Fixture Mode
+
+The checkout page supports local fixture mode for E2E testing without a live backend:
+
+```typescript
+const isLocalE2EMode = isLocalE2EModeEnabled()
+const localFixture = isLocalE2EMode
+  ? getLocalCheckoutFixture(resolvedSearchParams?.fixture)
+  : null
+
+const cart = localFixture?.cart ?? (await retrieveCart(cartId))
+const customer = localFixture?.customer ?? (await retrieveCustomer())
+```
+
+**Pattern:** Always guard `localFixture` behind `isLocalE2EModeEnabled()` — this flag should never be active in production.
+
+---
+
+## Fetching Payment Methods
+
+**CRITICAL:** Always fetch payment methods from Medusa by region ID — never hardcode.
+
+```typescript
+// In CheckoutWorkspace (server)
+const availablePaymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
+```
+
+**Why:** Payment providers vary per region. Hardcoding causes checkout to break when regions change.
+
+---
+
+## Checkout Stepper Component
+
+The stepper is presentational — it reads `?step=` from URL params.
+
+```typescript
+const CHECKOUT_STEPS = [
+  { id: "shipping-address", label: "Entrega" },
+  { id: "billing-address", label: "Faturamento" },
+  { id: "delivery", label: "Frete" },
+  { id: "contact-details", label: "Contato" },
+  { id: "payment", label: "Pagamento" },
+] as const
+```
+
+**Key accessibility requirement:** Each step circle uses `aria-current="step"` when active.
+
+---
+
+## Step Navigation Pattern
+
+Navigation between steps uses `useRouter` + `useSearchParams`:
+
+```typescript
+const createQueryString = useCallback(
+  (name: string, value: string) => {
+    const params = new URLSearchParams(searchParams)
+    params.set(name, value)
+    return params.toString()
+  },
+  [searchParams]
+)
+
+// Navigate forward
+router.push(pathname + "?" + createQueryString("step", "delivery"), {
+  scroll: false,
+})
+```
+
+**Use `scroll: false`** on all step transitions to prevent page jump. The checkout layout is a single-page flow where step content replaces inline without scroll-to-top.
+
+---
+
+## Payment Integration
+
+### Stripe
+
+```typescript
+// Check if provider is Stripe-like
+const isStripeLike = (providerId: string) => providerId.startsWith("pp_stripe")
+
+// Stripe-specific UX
+if (isStripeLike(selectedPaymentMethod) && !activeSession) {
+  // Show CardElement for card input
+  // Only route to review after card data is captured
+}
+```
+
+### Payment Session Initiation
+
+```typescript
+await initiatePaymentSession(cart, {
+  provider_id: selectedPaymentMethod,
+})
+```
+
+**Pattern:** Always call `initiatePaymentSession` when the provider changes OR when there is no active session.
+
+### Payment Wrapper
+
+`PaymentWrapper` provides Stripe context to the entire checkout:
+
+```typescript
+// app/[countryCode]/(checkout)/checkout/page.tsx
+<Wrapper cart={cart}>
+  <CheckoutWorkspace ... />
+</Wrapper>
+```
+
+The `StripeContext` (via `useContext`) is available throughout the checkout tree.
+
+---
+
+## Address Forms
+
+### Shipping Address
+
+```typescript
+// Component: modules/checkout/components/shipping-address
+// Form: modules/checkout/components/shipping-address-form
+```
+
+- Saves via `setShippingAddress(cart.id, addressPayload)`
+- Countries are fetched from `cart.region?.countries` — **NEVER show all countries**, only the region's countries
+- Persists address to `localStorage` for pre-fill on return visits
+
+### Billing Address
+
+```typescript
+// Component: modules/checkout/components/billing-address
+// Form: modules/checkout/components/billing-address-form
+```
+
+- Supports "same as shipping" toggle
+- Independent address form when billing differs from shipping
+- Uses `updateCart` to persist billing address
+
+### Address Select (Saved Addresses)
+
+```typescript
+// Component: modules/checkout/components/address-select
+```
+
+- For authenticated users with saved addresses
+- Populates form fields from selected address
+
+---
+
+## Company Step (B2B)
+
+```typescript
+// Component: modules/checkout/components/company
+// Form: modules/checkout/components/company-form
+```
+
+- Shown when `cart?.company` exists
+- Collects company name, registration number, tax ID
+- Required before proceeding to shipping address
+
+---
+
+## Checkout Totals
+
+```typescript
+// Component: modules/checkout/components/checkout-totals
+```
+
+- Displays subtotal, shipping, taxes, discount, gift card, total
+- Uses `convertToLocale` for price formatting
+- **Do NOT divide prices by 100** — Medusa prices are in display format
+
+---
 
 ## Error Handling
 
-**Form validation:**
-- Validate on blur, show error below field
-- User-friendly messages ("Please enter a valid email address")
-- Scroll to first error on submit
+```typescript
+// Component: modules/checkout/components/error-message
+```
 
-**Payment errors:**
-- Card declined: "Your card was declined. Please try another payment method."
-- Keep form data, suggest alternatives (try another card, PayPal)
-- Network timeout: Show retry option without re-entering data
+- All async step actions catch errors and set `error` state
+- `ErrorMessage` component renders below submit button
+- Reset `error` to `null` whenever `isOpen` changes (step focus changes)
 
-**Stock availability errors:**
-- Out of stock: Remove item, recalculate, allow continue with remaining items
-- Quantity reduced: Update automatically, show message, allow continue
+---
 
-## Checklist
+## Common Mistakes to Avoid
 
-**Essential checkout features:**
+- ❌ **Fetching payment methods client-side** — fetch server-side in `CheckoutWorkspace` to avoid waterfall
+- ❌ **Showing all countries** — only show `cart.region?.countries`
+- ❌ **Hardcoding payment providers** — always use `listCartPaymentMethods(region_id)`
+- ❌ **Jumping steps** — always enforce `furthestAccessibleStep` from surface steps logic
+- ❌ **Skipping `scroll: false`** on step navigation — causes jarring scroll-to-top
+- ❌ **Placing order before payment session** — ensure `initiatePaymentSession` completes before routing to review
+- ❌ **Dividing prices by 100** — Medusa stores prices as display values
+- ❌ **Not clearing cart state after order** — after successful order placement, invalidate cart context/cache
 
-- [ ] **RECOMMENDED: Separate components created for each checkout step**
-- [ ] Components: ShippingInformationStep, DeliveryMethodStep, PaymentInformationStep, OrderReviewStep
-- [ ] Decision made: Single-page or multi-step (based on complexity)
-- [ ] Guest checkout option (if backend supports it)
-- [ ] Email field first (if guest checkout)
-- [ ] Shipping address form with autocomplete attributes
-- [ ] "Billing same as shipping" checkbox (default checked)
-- [ ] Shipping methods fetched from backend dynamically
-- [ ] Shipping cost updates order total in real-time
-- [ ] **CRITICAL: Payment methods fetched from backend (NEVER assume or hardcode)**
-- [ ] **CRITICAL: Payment method selection UI shown to user (user must select from available options)**
-- [ ] Payment methods: show only enabled providers returned by backend
-- [ ] For Medusa: Payment session initialized after user selects provider (sdk.store.payment.initiatePaymentSession)
-- [ ] For Medusa: Country dropdown limited to cart's region countries
-- [ ] Digital wallets prominent on mobile (Apple Pay, Google Pay)
-- [ ] Payment tokenization (never send raw card data)
-- [ ] Order review section before submission
-- [ ] Order summary sidebar (sticky on desktop, collapsible on mobile)
-- [ ] Promo code input (if not applied in cart)
-- [ ] Trust signals throughout (secure checkout, return policy)
-- [ ] Terms and conditions checkbox (if required)
-- [ ] Place Order button prominent (48-56px, shows total)
-- [ ] Loading state during payment processing
-- [ ] Progress indicator (if multi-step)
-- [ ] Clear error messages for validation failures
-- [ ] Error handling for payment failures (keep form data)
-- [ ] Stock availability check before order creation
-- [ ] Mobile optimized (44-48px touch targets, single column)
-- [ ] Autocomplete enabled on all form fields
-- [ ] Keyboard accessible (tab through fields, enter to submit)
-- [ ] ARIA labels on form fields (aria-required, aria-invalid)
-- [ ] Redirect to order confirmation on success
-- [ ] **CRITICAL: Clear cart state after successful order** (reset cart in Context/Zustand, remove cart ID from localStorage, invalidate cart queries)
-- [ ] Cart popup shows empty cart after order completion (not old items)
+---
+
+## Checkout Summary Panel
+
+```typescript
+// Template: modules/checkout/templates/checkout-summary
+```
+
+- Shows cart items, quantities, and totals in a sidebar (desktop) or collapsible panel (mobile)
+- Includes `PromotionCode` component for discount code entry
+- Stays visible across all checkout steps
+
+---
+
+## Testing Checkout
+
+### Unit Tests
+
+- Test `resolveCheckoutSurfaceState` logic with various cart states
+- Test `normalizeCheckoutSurfaceStep` edge cases
+- Test `canAccessCheckoutSurfaceStep` ordering
+
+### E2E Tests
+
+- Use local fixture mode (`isLocalE2EModeEnabled()`) for deterministic checkout tests
+- Fixture provides cart, customer, shipping methods, and payment methods
+- See `e2e/checkout-flow.spec.ts` for existing E2E test patterns
+
+### Manual Verification Checklist
+
+- [ ] Cannot navigate to a step beyond what cart state allows
+- [ ] Payment methods load from Medusa (not hardcoded)
+- [ ] Countries dropdown only shows region's countries
+- [ ] Stripe card element appears for Stripe provider
+- [ ] B2B payment lock works when approval required
+- [ ] Spend limit warning shows when exceeded
+- [ ] Order places successfully and cart clears
+- [ ] Mobile layout does not have scroll/overflow issues
