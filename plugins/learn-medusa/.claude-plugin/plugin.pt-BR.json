@@ -1,0 +1,19 @@
+{
+  "name": "learn-medusa",
+  "description": "Tutorial guiado e interativo para aprender desenvolvimento com Medusa. Ensina a construir features customizadas passo a passo com um exemplo de brands.",
+  "version": "1.0.8",
+  "author": {
+    "name": "Medusa"
+  },
+  "homepage": "https://medusajs.com",
+  "repository": "https://github.com/medusajs/medusa-claude-plugins",
+  "keywords": [
+    "medusa",
+    "aprendizado",
+    "tutorial",
+    "ecommerce",
+    "interativo",
+    "educação",
+    "guiado"
+  ]
+}
