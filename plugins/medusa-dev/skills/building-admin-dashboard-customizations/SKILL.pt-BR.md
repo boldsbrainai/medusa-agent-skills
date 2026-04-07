@@ -13,6 +13,7 @@ Crie extensões de UI personalizadas para o painel de controle Medusa Admin usan
 ## Quando Aplicar
 
 **Carregue esta skill para QUALQUER tarefa de desenvolvimento de UI de admin, incluindo:**
+
 - Criação de widgets para páginas de produto/pedido/cliente.
 - Construção de páginas de administração personalizadas.
 - Implementação de formulários e modais.
@@ -43,6 +44,7 @@ Crie extensões de UI personalizadas para o painel de controle Medusa Admin usan
 **⚠️ CRÍTICO: Esta skill deve ser consultada PRIMEIRO para planejamento e implementação.**
 
 **Use esta skill para (FONTE PRIMÁRIA):**
+
 - **Planejamento** - Entender como estruturar recursos da UI de admin.
 - **Padrões de componentes** - Widgets, páginas, formulários, tabelas, modais.
 - **Sistema de design** - Tipografia, cores, espaçamento, classes semânticas.
