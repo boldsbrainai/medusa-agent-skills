@@ -1,74 +1,234 @@
-# Medusa Agent Skills
+# Medusa Agent Skills — YSH Store
 
-A collection of skills composed as Claude Code plugins for building Medusa applications with best practices and architectural patterns.
+Coleção de skills para agentes de IA no contexto do **YSH Store**, uma plataforma B2B de energia solar construída sobre Medusa.js v2. Inclui skills de backend, admin UI e storefront alinhados à arquitetura obrigatória do projeto.
 
-These skills can be used with any agent, as explained in the [Usage with Other Agents](#usage-with-other-agents) section.
+Este workspace usa **GitHub Copilot CLI** como agente principal de orquestração.
 
-- [Available Plugins](#available-plugins)
-- [Installation for Claude Code](#installation-for-claude-code)
-- [Usage](#usage)
-- [Usage with Other Agents](#usage-with-other-agents)
-- [Privacy](#privacy)
+---
 
-## Available Plugins
+## Arquitetura Obrigatória
 
-| Plugin | Description |
-|--------|-------------|
-| [medusa-dev](plugins/medusa-dev/README.md) | Comprehensive skills for building Medusa applications across backend, admin UI, and storefronts. |
-| [learn-medusa](plugins/learn-medusa/README.md) | Interactive tutorial session to learn about Medusa concepts through building a brands feature. |
-| [ecommerce-storefront](plugins/ecommerce-storefront/README.md) | Comprehensive skill for building high-converting ecommerce storefronts with best practices. |
+Toda implementação neste projeto segue o fluxo:
 
-## Installation for Claude Code
-
-1. Start Claude:
-
-```bash
-claude
+```
+Module → Workflow → API Route → Frontend
 ```
 
-2. Add the Medusa marketplace to Claude Code:
+**Regras inegociáveis:**
+
+| Regra | Detalhe |
+|-------|---------|
+| Toda mutação passa por workflow | Nunca chame serviços diretamente na rota |
+| Métodos HTTP: `GET`, `POST`, `DELETE` | `PUT`/`PATCH` são exceção, nunca padrão |
+| SDK da Medusa no storefront e admin | Não use `fetch` cru para endpoints Medusa |
+| Preço é valor final | `49.99` entra e sai como `49.99` — nunca ×100 ou ÷100 |
+| Imports estáticos no topo | Nenhum `await import()` em handlers |
+| `query.graph()` para leitura cross-module | Use `query.index()` quando o filtro depende de módulo linkado |
+
+---
+
+## Plugins Disponíveis
+
+| Plugin | Escopo |
+|--------|--------|
+| [medusa-dev](plugins/medusa-dev/README.md) | Backend: módulos, workflows, rotas API, links, migrations |
+| [learn-medusa](plugins/learn-medusa/README.md) | Referência de arquitetura Medusa.js v2 (módulos, isolation, orquestração) |
+| [ecommerce-storefront](plugins/ecommerce-storefront/README.md) | Storefront: layouts, SEO, mobile, Medusa SDK, React Query |
+
+### Skills por domínio
+
+```
+medusa-dev/
+  building-with-medusa            → módulos, workflows, rotas, module links
+  building-admin-dashboard-customizations  → widgets, páginas, formulários admin
+  building-storefronts            → integração SDK, React Query, storefront
+
+learn-medusa/
+  learning-medusa/architecture    → module-workflow-route, module-isolation, admin-integration
+  learning-medusa/checkpoints     → validação por camada (module, workflow, route, widget)
+
+ecommerce-storefront/
+  storefront-best-practices       → layouts, SEO, mobile, checkout, PDP, listing
+```
+
+---
+
+## Skills YSH (workspace-local)
+
+Skills específicos deste workspace ficam em `.github/skills/`:
+
+| Skill | Quando usar |
+|-------|-------------|
+| `ysh-medusa-backend-workflow` | **Padrão principal** para qualquer backend Medusa: módulo, workflow, rota, migration, link, auditoria |
+| `ysh-storefront-360-workflow` | Storefront end-to-end: home, listing, PDP, comparador, cart, checkout, conta, pedido |
+| `ysh-audit-agents-workflow` | Revisão de auditoria, comparador, leaderboard, error terminal, pre-deploy |
+| `ysh-medusa-manufacturer-incorporation` | Incorporação de fabricantes, catálogo, taxonomia, publicação |
+
+> Em conflito entre skill upstream (medusa-dev) e skill YSH, o skill YSH prevalece.
+
+---
+
+## Uso com GitHub Copilot CLI
+
+Este projeto usa GitHub Copilot CLI. Os skills são carregados como instruções de contexto, não como plugins de CLI.
+
+**Invocar um skill:**
+
+```
+@workspace use skill ysh-medusa-backend-workflow
+```
+
+Ou via prefixo no prompt:
+
+```
+[[SKILL: ysh-medusa-backend-workflow]] crie um workflow para aprovar fabricantes
+```
+
+**Carregamento automático:** skills relevantes são selecionados automaticamente pelo Copilot com base no domínio da tarefa (backend vs. storefront vs. auditoria).
+
+---
+
+## Uso com Claude Code (upstream)
+
+Para uso com Claude Code, consulte as instruções de instalação dos plugins individuais.
+
+**Adicionar marketplace:**
 
 ```bash
 /plugin marketplace add medusajs/medusa-agent-skills
 ```
 
-3. Install any of the plugins. For example:
+**Instalar plugin de backend:**
 
 ```bash
 /plugin install medusa-dev@medusa
 ```
 
-4. Verify the plugin is loaded:
+**Instalar plugin de storefront:**
+
+```bash
+/plugin install ecommerce-storefront@medusa
+```
+
+**Verificar:**
 
 ```bash
 /plugin
 ```
 
-You should see the Medusa plugin listed under the Installed tab.
+---
 
-## Usage with Other Agents
-
-### Installation with `skills`
-
-The `skills` command allows you to copy skills from a repository to the directory relevant for your agent. Use this command when you only want to copy skills, as you can't copy the MCP server with this command.
+## Uso com Outros Agentes (Cursor, Windsurf etc.)
 
 ```bash
-yarn skills add medusajs/medusa-agent-skills
+npx skills add medusajs/medusa-agent-skills
 ```
 
-### Manual Installation
+Ou copie manualmente o conteúdo de `plugins/<nome>/skills/` para o diretório de skills do seu agente.
 
-Alternatively, you can copy the assets necessary, including skills and MCP servers, to the directory relevant to your agent.
+---
 
-For example, if you're using Cursor and you want to use the [medusa-dev plugin](./plugins/medusa-dev/README.md), you can:
+## Estrutura do Projeto YSH Store
 
-1. Copy the skills directories to the .cursor/skills directory of your Medusa project.
-2. Add the MCP server configuration to the .cursor/mcp.json file of your Medusa project.
+```
+ysh-store_v0/
+├── backend/              # Medusa.js v2 — módulos, workflows, rotas API, admin
+│   ├── src/modules/      # custom modules (manufacturer, solar, distributor, company, quote...)
+│   ├── src/workflows/    # toda mutação passa por aqui
+│   ├── src/api/          # rotas admin/ e store/
+│   ├── src/links/        # module links (query cross-module)
+│   └── src/admin/        # admin UI (routes/, hooks/api/, components/)
+├── storefront/           # Next.js — SDK Medusa, React Query, Tailwind
+└── medusa-agent-skills/  # este repositório de skills
+```
 
-## Usage
+**Módulos customizados ativos:**
 
-These plugins will help you with your Medusa development. Refer to each plugin for more details on usage.
+| Módulo | Responsabilidade |
+|--------|-----------------|
+| `manufacturer` | Fabricantes de energia solar (status, aliases, importação) |
+| `solar` | Perfis técnicos de produto, ofertas de distribuidor, price rules |
+| `distributor` | Distribuidores B2B (tipo, moeda, status, contato) |
+| `company` | Empresas compradoras B2B |
+| `approval` | Fluxo de aprovação de pedidos |
+| `quote` | Cotações B2B |
 
-## Privacy
+---
 
-The Medusa plugins do not collect, store, or transmit any user data or conversation information. All instructional content is provided locally through skill files, and MCP servers only query public Medusa documentation.
+## Padrões de Implementação
+
+### Novo módulo
+
+```
+src/modules/<nome>/
+  constants.ts        # NOME_MODULE
+  models/             # model.define() — id com prefix
+  service.ts          # MedusaService(models)
+  index.ts            # Module(NOME_MODULE, { service })
+  migrations/         # Migration<timestamp>.ts
+```
+
+### Novo workflow
+
+```typescript
+// step com compensação
+export const meuStep = createStep(
+  "meu-step",
+  async (input, { container }) => {
+    const service = container.resolve(MEU_MODULE)
+    const resultado = await service.createX(input)
+    return new StepResponse(resultado, resultado.id)
+  },
+  async (id, { container }) => {
+    const service = container.resolve(MEU_MODULE)
+    await service.deleteX(id)
+  }
+)
+
+// workflow — sem async na composição
+export const meuWorkflow = createWorkflow("meu-workflow", (input) => {
+  return meuStep(input)
+})
+```
+
+### Nova rota admin
+
+```typescript
+// GET list
+export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) => {
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data, metadata } = await query.graph({ entity: "...", ...queryConfig.list })
+  res.json({ items: data, count: metadata?.count })
+}
+
+// POST mutação
+export const POST = async (req: AuthenticatedMedusaRequest<CreateDto>, res: MedusaResponse) => {
+  const { result } = await meuWorkflow(req.scope).run({ input: req.validatedBody })
+  res.json({ item: result })
+}
+```
+
+---
+
+## Comandos de Manutenção
+
+```bash
+# Gerar migration para um módulo
+npx medusa db:generate --module <nome-modulo>
+
+# Rodar migrations pendentes
+npx medusa db:migrate
+
+# Criar usuário admin
+npx medusa user -e admin@exemplo.com -p senha123
+
+# Build TypeScript (backend + admin)
+npx tsc --noEmit
+npx tsc --project src/admin/tsconfig.json --noEmit
+```
+
+---
+
+## Privacidade
+
+Os skills deste repositório não coletam, armazenam ou transmitem dados do usuário ou da conversa. Todo o conteúdo instrucional é local. O servidor MCP (`MedusaDocs`) consulta apenas documentação pública da Medusa.
