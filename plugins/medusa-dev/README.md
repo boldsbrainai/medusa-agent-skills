@@ -65,6 +65,20 @@ npx skills add medusajs/medusa-agent-skills
 
 In your Medusa application, ask Claude to build features. Claude will know what to load from the Medusa plugin to build your feature.
 
+## Local Translation with Ollama
+
+To regenerate detailed Brazilian Portuguese pages with the local `gemma4:e4b` model, preserving markdown structure and adding or expanding `Yello Solar Hub` use cases, run:
+
+```bash
+pnpm ollama:translate:medusa-pages -- medusa-agent-skills/plugins/medusa-dev/skills/building-admin-dashboard-customizations --overwrite
+```
+
+To process the full plugin tree:
+
+```bash
+pnpm ollama:translate:medusa-pages -- medusa-agent-skills/plugins/medusa-dev --overwrite
+```
+
 ### Example Use Cases
 
 Here are some examples of what you can ask Claude to build:
