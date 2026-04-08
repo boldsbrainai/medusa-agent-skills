@@ -20,6 +20,7 @@ Create these tasks in your todo list:
 ## Basic Workflow Structure
 
 **File Organization:**
+
 - **Recommended**: Create workflow steps in `src/workflows/steps/[step-name].ts`
 - Workflow composition functions go in `src/workflows/[workflow-name].ts`
 - This keeps steps reusable and organized
@@ -85,6 +86,7 @@ export default createMyModel
 The workflow composition function runs at application load time and has important limitations:
 
 ### Function Declaration
+
 - ✅ Use regular synchronous functions
 - ❌ No `async` functions
 - ❌ No arrow functions (use `function` keyword)
@@ -132,19 +134,23 @@ export const processCustomersWorkflow = createWorkflow(
 ```
 
 **Why this matters:**
+
 - Medusa uses step names to track execution state
 - Duplicate names cause conflicts in the workflow execution engine
 - Each step invocation needs a unique identifier
 - The workflow will fail at runtime if steps aren't renamed
 
 ### Variable Operations
+
 - ❌ No direct variable manipulation or concatenation → Use `transform({ in }, ({ in }) => \`Transformed: ${in}\`)` instead
 - Variables lack values until execution time - all operations must use `transform()`
 
 ### Date/Time Operations
+
 - ❌ No `new Date()` (will be fixed to load time) → Wrap in `transform()` for execution-time evaluation
 
 ### Conditional Logic
+
 - ❌ No `if`/`else` statements → Use `when(input, (input) => input.is_active).then(() => { /* steps */ })` instead
 - ❌ No ternary operators (`? :`) → Use `transform()` instead
 - ❌ No nullish coalescing (`??`) → Use `transform()` instead
@@ -153,6 +159,7 @@ export const processCustomersWorkflow = createWorkflow(
 - ❌ No double negation (`!!`) → Use `transform()` instead
 
 ### Object Operations
+
 - ❌ No object spreading (`...`) for destructuring or spreading properties → Use `transform()` to create new objects with desired properties
 
 ```typescript
@@ -187,11 +194,12 @@ const myWorkflow = createWorkflow(
 ```
 
 ### Loops
+
 - ❌ No `for`/`while` loops → Use alternatives below based on your use case
 
 Workflow composition functions run at application load time to define the workflow structure, not to execute logic. Loops cannot be used directly in the composition function. Instead, use these patterns:
 
-**Alternative 1: Loop in Calling Code (Repeat entire workflow)**
+### **Alternative 1: Loop in Calling Code (Repeat entire workflow)**
 
 When you need to execute a workflow multiple times (e.g., once per item in an array), wrap the workflow execution in a loop in the code that calls the workflow:
 
@@ -273,15 +281,18 @@ const myWorkflow = createWorkflow(
 ```
 
 **Why this matters:**
+
 - The workflow composition function runs once at application load time to define the structure
 - Loops would execute at load time with no data, not at execution time with actual input
 - Alternative 1 repeats the entire workflow (including rollback capability) for each item
 - Alternative 2 processes arrays within a single workflow execution using `transform()`
 
 ### Error Handling
+
 - ❌ No `try-catch` blocks → See error handling patterns in Medusa documentation
 
 ### Return Values
+
 - ✅ Only return serializable values (primitives, plain objects)
 - ❌ No non-serializable types (Maps, Sets, etc.)
 - For buffers: Return as object property, then recreate with `Buffer.from()` when processing results
@@ -435,6 +446,7 @@ const queryProductStep = createStep(
 ```
 
 **Why reuse built-in steps:**
+
 - Already tested and optimized by Medusa
 - Handles edge cases and error scenarios
 - Maintains consistency with Medusa's internal workflows
@@ -442,6 +454,7 @@ const queryProductStep = createStep(
 - Less code to maintain
 
 **Other common built-in steps to look for:**
+
 - Event emission steps
 - Notification steps
 - Inventory management steps
@@ -506,6 +519,7 @@ export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
 ```
 
 **Why this matters:**
+
 - Workflows are the single source of truth for business logic
 - Validation in routes bypasses workflow rollback mechanisms
 - Makes testing harder and logic harder to reuse
