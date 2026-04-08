@@ -20,7 +20,7 @@ Before we start coding, let's understand **why** Medusa uses this layered archit
 
 Every custom feature in Medusa follows this flow:
 
-```
+```bash
 ┌─────────────────────────────────────────────────┐
 │  API Route (HTTP Interface)                     │
 │  - Accepts requests                             │
@@ -49,11 +49,13 @@ Every custom feature in Medusa follows this flow:
 ### Why This Pattern?
 
 **Separation of Concerns**: Each layer has one responsibility
+
 - API routes handle HTTP concerns (validation, serialization)
 - Workflows handle business logic (orchestration, rollback)
 - Modules handle data (CRUD, database)
 
 **Reusability**: Workflows can be called from:
+
 - Multiple API routes
 - Other workflows
 - Scheduled jobs
@@ -72,6 +74,7 @@ Every custom feature in Medusa follows this flow:
 In this lesson, we'll build a brands feature that allows admin users to create brands via an API endpoint.
 
 **Features**:
+
 - Create a `brand` table in the database
 - Provide methods to manage brands (create, retrieve, update, delete)
 - Expose POST /admin/brands endpoint to create brands
@@ -79,6 +82,7 @@ In this lesson, we'll build a brands feature that allows admin users to create b
 - Add rollback logic if errors occur
 
 **By the end**, you'll be able to:
+
 ```bash
 curl -X POST 'http://localhost:9000/admin/brands' \
   -H 'Authorization: Bearer {token}' \
@@ -86,6 +90,7 @@ curl -X POST 'http://localhost:9000/admin/brands' \
 ```
 
 And get back:
+
 ```json
 {
   "brand": {
@@ -112,6 +117,7 @@ A **Module** is a reusable package of functionality for a single domain. Think o
 - Is isolated from other modules (no direct dependencies)
 
 Medusa comes with built-in modules like:
+
 - **Product Module**: Manages products, variants, options
 - **Cart Module**: Manages shopping carts
 - **Customer Module**: Manages customers
@@ -129,6 +135,7 @@ mkdir -p src/modules/brand/models
 ```
 
 **Why this structure?**
+
 - Modules MUST be in `src/modules/`
 - Data models MUST be in a `models/` subdirectory
 - Medusa auto-discovers modules in this structure
@@ -191,6 +198,7 @@ export default BrandModuleService
 **What's happening here?**
 
 `MedusaService({ Brand })` **generates** these methods automatically:
+
 - `createBrands(data)` - Create one or more brands
 - `retrieveBrand(id, config)` - Get a brand by ID
 - `listBrands(filters, config)` - List brands with filters
@@ -210,6 +218,7 @@ Yes! Add them inside the class body. But for basic CRUD, the generated methods a
 ### Step 1.4: Export Module Definition
 
 Every module must export a definition that tells Medusa:
+
 - The module's name
 - The module's main service
 
@@ -299,37 +308,32 @@ Before proceeding, let's verify the module is working.
 Answer these to test your understanding:
 
 1. **What does `MedusaService()` do?**
-   <details>
-   <summary>Click to reveal answer</summary>
-   It generates CRUD methods for your data models automatically.
-   </details>
+   > It generates CRUD methods for your data models automatically.
 
 2. **Why is the module name "brand" and not "brand-module"?**
-   <details>
-   <summary>Click to reveal answer</summary>
-   Module names must be camelCase. Dashes cause runtime resolution errors.
-   </details>
+   > Module names must be camelCase. Dashes cause runtime resolution errors.
 
 3. **What happens if you forget to run migrations?**
-   <details>
-   <summary>Click to reveal answer</summary>
-   The `brand` table won't exist in the database, so service methods will fail.
-   </details>
+   > The `brand` table won't exist in the database, so service methods will fail.
 
 ### Implementation Check
 
 Run these commands and share the output:
 
 1. **Check migrations succeeded**:
+
    ```bash
    npx medusa db:migrate
    ```
+
    Expected: "No pending migrations" or "Migrations complete"
 
 2. **Check build succeeds**:
+
    ```bash
    npm run build
    ```
+
    Expected: No TypeScript errors
 
 3. **Show me your files**:
@@ -339,19 +343,23 @@ Run these commands and share the output:
 
 ### Common Issues
 
-**"Cannot find module 'brand'"**
+#### "Cannot find module 'brand'"
+
 - **Cause**: Module not registered in `medusa-config.ts`
 - **Fix**: Add `{ resolve: "./src/modules/brand" }` to modules array
 
-**"Module name must be camelCase"**
+#### "Module name must be camelCase"
+
 - **Cause**: Used dashes in module name
 - **Fix**: Use "brand" not "brand-module" in `BRAND_MODULE`
 
-**"Table brand already exists"**
+#### "Table brand already exists"
+
 - **Cause**: Migration already run or table manually created
 - **Fix**: Drop the table or use a different name
 
-**Build errors**
+#### Build errors
+
 - Check all imports are correct
 - Ensure TypeScript is happy with your code
 - Share the error message for help debugging
@@ -376,6 +384,7 @@ A **Workflow** orchestrates multiple operations that need to complete together. 
 Imagine you're creating a brand AND uploading its logo to S3:
 
 **Without Workflow** (Fragile):
+
 ```typescript
 // Create brand
 const brand = await brandService.createBrands({ name: "Acme" })
@@ -387,6 +396,7 @@ await s3.upload(brand.id, logo) // What if this fails?
 ```
 
 **With Workflow** (Robust):
+
 ```typescript
 const workflow = createWorkflow("create-brand-with-logo", function (input) {
   const brand = createBrandStep(input)
@@ -402,6 +412,7 @@ const workflow = createWorkflow("create-brand-with-logo", function (input) {
 ```
 
 **Key Benefits**:
+
 - **Automatic rollback**: Compensation functions undo changes
 - **Transaction safety**: All or nothing
 - **Retry logic**: Can retry failed steps
@@ -412,6 +423,7 @@ const workflow = createWorkflow("create-brand-with-logo", function (input) {
 ### Step 2.1: Create Brand Step
 
 A **step** is the atomic unit of work in a workflow. Each step has:
+
 - A step function (performs the action)
 - A compensation function (undoes the action on error)
 
@@ -456,6 +468,7 @@ export const createBrandStep = createStep(
 **Let's break this down**:
 
 **1. Step Function (2nd parameter)**:
+
 ```typescript
 async (input: CreateBrandStepInput, { container }) => {
   // Resolve the Brand Module service from Medusa container
@@ -477,6 +490,7 @@ async (input: CreateBrandStepInput, { container }) => {
   - `compensationData`: Passed to compensation function (brand ID)
 
 **2. Compensation Function (3rd parameter)**:
+
 ```typescript
 async (brandId, { container }) => {
   if (!brandId) {
@@ -497,12 +511,14 @@ async (brandId, { container }) => {
 **Key Concept: The Medusa Container**
 
 The **Medusa container** is a dependency injection container that holds:
+
 - Core modules (Product, Cart, Customer, etc.)
 - Custom modules (Brand)
 - Services (logger, database, etc.)
 - Framework tools (Link, Query, etc.)
 
 You access them via `container.resolve()`:
+
 ```typescript
 const brandService = container.resolve("brand")
 const logger = container.resolve("logger")
@@ -617,8 +633,10 @@ const brand = createBrandStep(input)  // Step returns immediately
 ### Common Issues
 
 **"Async function not allowed"**
+
 - **Cause**: Used `async` keyword in workflow constructor
 - **Fix**: Remove `async`:
+
   ```typescript
   // ❌ Wrong
   createWorkflow("name", async (input) => { ... })
@@ -628,8 +646,10 @@ const brand = createBrandStep(input)  // Step returns immediately
   ```
 
 **"Cannot use await"**
+
 - **Cause**: Used `await` to call step
 - **Fix**: Remove `await`:
+
   ```typescript
   // ❌ Wrong
   const brand = await createBrandStep(input)
@@ -639,8 +659,10 @@ const brand = createBrandStep(input)  // Step returns immediately
   ```
 
 **"Arrow functions not allowed"**
+
 - **Cause**: Used arrow function for workflow constructor
 - **Fix**: Use `function` keyword:
+
   ```typescript
   // ❌ Wrong
   createWorkflow("name", (input) => { ... })
@@ -664,12 +686,14 @@ const brand = createBrandStep(input)  // Step returns immediately
 ### What is an API Route?
 
 An **API Route** is a REST endpoint that exposes your features to clients:
+
 - Admin dashboard
 - Storefront
 - Mobile apps
 - Third-party integrations
 
 **Key Principle**: Routes are THIN
+
 - Validate input
 - Execute workflow
 - Return response
