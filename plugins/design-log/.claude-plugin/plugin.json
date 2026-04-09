@@ -1,0 +1,22 @@
+{
+  "name": "design-log",
+  "description": "Teaches AI agents how to use the YSH Store Design-Log methodology — a structured decision-logging system that serves as persistent external memory across AI sessions. Agents learn when to consult existing logs, how to create new entries, and how to align every implementation with approved decisions.",
+  "version": "1.0.0",
+  "author": {
+    "name": "YSH Store"
+  },
+  "homepage": "https://github.com/boldsbrainai/ysh-store",
+  "repository": "https://github.com/Fernadoteixeira/medusa-agent-skills",
+  "keywords": [
+    "design-log",
+    "decision-log",
+    "adr",
+    "architecture",
+    "methodology",
+    "agents",
+    "ysh-store",
+    "context",
+    "memory",
+    "workflow"
+  ]
+}
