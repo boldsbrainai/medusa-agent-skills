@@ -34,6 +34,7 @@ Module → Workflow → API Route → Frontend
 | [medusa-dev](plugins/medusa-dev/README.md) | Backend: módulos, workflows, rotas API, links, migrations |
 | [learn-medusa](plugins/learn-medusa/README.md) | Referência de arquitetura Medusa.js v2 (módulos, isolation, orquestração) |
 | [ecommerce-storefront](plugins/ecommerce-storefront/README.md) | Storefront: layouts, SEO, mobile, Medusa SDK, React Query |
+| [design-log](plugins/design-log/README.md) | Design-Log: metodologia de decisões arquiteturais persistentes para agentes de IA |
 
 ### Skills por domínio
 
