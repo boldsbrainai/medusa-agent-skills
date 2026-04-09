@@ -21,6 +21,7 @@ Now that brands exist in the backend, let's build the admin UI:
 2. **Brands Management Page**: List all brands with their products
 
 **By the end**, admins will be able to:
+
 - See which brand a product belongs to
 - Navigate to a brands management page
 - View all brands and their products in a table
@@ -48,6 +49,7 @@ export const sdk = new Medusa({
 ```
 
 **Configuration**:
+
 - `baseUrl`: Medusa server URL (use environment variable or default to "/")
 - `debug`: Enable logging in development
 - `auth.type`: "session" for admin dashboard
@@ -134,13 +136,16 @@ export default ProductBrandWidget
 **Key concepts**:
 
 **1. Widget Props**:
+
 ```tsx
 DetailWidgetProps<AdminProduct>
 ```
+
 - Widgets on detail pages receive the entity as `data` prop
 - Type it with the appropriate entity type
 
 **2. Data Fetching**:
+
 ```tsx
 useQuery({
   queryFn: () => sdk.admin.product.retrieve(product.id, {
@@ -149,11 +154,13 @@ useQuery({
   queryKey: ["product", product.id, "brand"],
 })
 ```
+
 - Use React Query (`useQuery`) for data fetching
 - Query key should include dependencies
 - Use `fields` parameter to get linked brand
 
 **3. Medusa UI Components**:
+
 - Always use components from `@medusajs/ui`
 - Common: `Container`, `Heading`, `Text`, `Button`
 - Maintains consistent design
