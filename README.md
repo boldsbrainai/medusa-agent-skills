@@ -27,6 +27,26 @@ Module → Workflow → API Route → Frontend
 
 ---
 
+## Contrato do Root Workspace
+
+Agentes e skills deste workspace devem tratar o root como uma superfície controlada.
+
+- Não criar novos arquivos soltos no root
+- Não criar novas pastas no root fora das quatro zonas lógicas do projeto
+- Usar `tools/` para utilitários versionados fora de `backend/scripts/`
+- Usar `backend/static/tmp/` para outputs e snapshots gerados
+
+**Zonas lógicas do root:**
+
+1. `01-backend` → `backend/`, `design-log/`, `docs/`, `tools/`
+2. `02-infra` → `.github/`, `ops/`, manifests do workspace, compose e licença
+3. `03-local` → superfícies locais/não-portáveis (`.agents/`, `.claude/`, `.qwen/`, `.vscode/`, `.venv/`, caches, `.env.local`)
+4. `04-storefront` → `storefront/`
+
+Importante: isso é um contrato de governança para os agentes. Não mover fisicamente os anchors do monorepo sem uma migração aprovada por humano.
+
+---
+
 ## Plugins Disponíveis
 
 | Plugin | Escopo |
