@@ -33,15 +33,15 @@ Agentes e skills deste workspace devem tratar o root como uma superfície contro
 
 - Não criar novos arquivos soltos no root
 - Não criar novas pastas no root fora das quatro zonas lógicas do projeto
-- Usar `tools/` para utilitários versionados fora de `backend/scripts/`
-- Usar `backend/static/tmp/` para outputs e snapshots gerados
+- Usar `01-backend/tools/` para utilitários versionados fora de `01-backend/scripts/`
+- Usar `01-backend/static/tmp/` para outputs e snapshots gerados
 
 **Zonas lógicas do root:**
 
-1. `01-backend` → `backend/`, `design-log/`, `docs/`, `tools/`
+1. `01-backend` → `01-backend/`, `design-log/`, `docs/`, `tools/`
 2. `02-infra` → `.github/`, `ops/`, manifests do workspace, compose e licença
 3. `03-local` → superfícies locais/não-portáveis (`.agents/`, `.claude/`, `.qwen/`, `.vscode/`, `.venv/`, caches, `.env.local`)
-4. `04-storefront` → `storefront/`
+4. `04-storefront` → `04-storefront/`
 
 Importante: isso é um contrato de governança para os agentes. Não mover fisicamente os anchors do monorepo sem uma migração aprovada por humano.
 
@@ -153,13 +153,13 @@ Ou copie manualmente o conteúdo de `plugins/<nome>/skills/` para o diretório d
 
 ```
 ysh-store_v0/
-├── backend/              # Medusa.js v2 — módulos, workflows, rotas API, admin
+├── 01-backend/           # Medusa.js v2 — módulos, workflows, rotas API, admin
 │   ├── src/modules/      # custom modules (manufacturer, solar, distributor, company, quote...)
 │   ├── src/workflows/    # toda mutação passa por aqui
 │   ├── src/api/          # rotas admin/ e store/
 │   ├── src/links/        # module links (query cross-module)
 │   └── src/admin/        # admin UI (routes/, hooks/api/, components/)
-├── storefront/           # Next.js — SDK Medusa, React Query, Tailwind
+├── 04-storefront/        # Next.js — SDK Medusa, React Query, Tailwind
 └── medusa-agent-skills/  # este repositório de skills
 ```
 
