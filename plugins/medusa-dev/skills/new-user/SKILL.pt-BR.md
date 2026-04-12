@@ -10,6 +10,7 @@ allowed-tools: Bash(npx medusa user:*)
 Cria um novo usuário administrador no Medusa com o e-mail e a senha especificados.
 
 O usuário deverá fornecer dois argumentos:
+
 - Primeiro argumento: endereço de e-mail
 - Segundo argumento: senha
 
